@@ -2,159 +2,178 @@
 
 ## Visão geral
 
-Este projeto propõe a evolução de um sistema bancário procedural. A aplicação deve ser refatorada para separar suas responsabilidades em funções reutilizáveis e receber recursos para cadastro de clientes e contas-correntes.
+Este projeto implementa a segunda versão de um sistema bancário executado pelo terminal. A solução refatora as operações bancárias em funções e acrescenta o gerenciamento de clientes e contas-correntes.
 
-A modularização busca tornar o código mais legível, manutenível e preparado para futuras evoluções.
+Os dados são mantidos em memória durante a execução, utilizando listas e dicionários, sem dependências externas.
 
-## Objetivo
+## Funcionalidades implementadas
 
-Refatorar as operações de depósito, saque e exibição de extrato em funções específicas e implementar duas novas operações:
+- realização de depósitos;
+- realização de saques;
+- consulta de extrato e saldo;
+- validação e normalização de CPF;
+- cadastro de clientes;
+- validação da data de nascimento;
+- validação da estrutura do endereço;
+- criação de contas para clientes existentes;
+- geração sequencial do número das contas;
+- listagem das contas cadastradas;
+- prevenção de clientes duplicados pelo CPF.
 
-- cadastro de cliente;
-- cadastro de conta-corrente vinculada a um cliente.
-
-## Requisitos funcionais
+## Operações bancárias
 
 ### Depósito
 
-A função de depósito deve:
-
-- receber `saldo`, `valor` e `extrato` exclusivamente como argumentos posicionais (*positional-only*);
-- aceitar apenas valores positivos;
-- registrar no extrato os depósitos válidos;
-- retornar o saldo e o extrato atualizados.
-
-Assinatura esperada:
+A função `depositar` recebe `saldo`, `valor` e `extrato` exclusivamente como argumentos posicionais (*positional-only*).
 
 ```python
-def depositar(saldo, valor, extrato, /):
+def depositar(saldo: float, valor: float, extrato: str, /):
     ...
 ```
+
+O depósito é registrado somente quando o valor informado é maior que zero. A função retorna o saldo e o extrato atualizados.
 
 ### Saque
 
-A função de saque deve:
-
-- receber todos os argumentos exclusivamente por nome (*keyword-only*);
-- validar o saldo disponível, o limite por operação e a quantidade diária de saques;
-- aceitar apenas valores positivos;
-- registrar no extrato os saques válidos;
-- retornar o saldo e o extrato atualizados.
-
-Argumentos esperados: `saldo`, `valor`, `extrato`, `limite`, `numero_saques` e `limite_saques`.
-
-Assinatura esperada:
+A função `sacar` recebe todos os argumentos exclusivamente por nome (*keyword-only*).
 
 ```python
-def sacar(*, saldo, valor, extrato, limite, numero_saques, limite_saques):
+def sacar(
+    *,
+    saldo: float,
+    valor: float,
+    extrato: str,
+    limite: float,
+    numero_saques: int,
+    limite_saques: int,
+):
     ...
 ```
+
+Antes de concluir a operação, são verificados:
+
+- o saldo disponível;
+- o limite de R$ 500,00 por saque;
+- o limite de três saques;
+- a validade do valor informado.
+
+O contador de saques é incrementado somente quando o saldo é alterado, indicando que a operação foi concluída.
 
 ### Extrato
 
-A função de extrato deve:
-
-- receber `saldo` como argumento posicional;
-- receber `extrato` como argumento nomeado;
-- exibir todas as movimentações realizadas;
-- informar que não houve movimentações quando o histórico estiver vazio;
-- exibir o saldo atual.
-
-Assinatura esperada:
+A função `exibir_extrato` recebe o saldo por posição e o extrato por nome.
 
 ```python
-def exibir_extrato(saldo, /, *, extrato):
+def exibir_extrato(saldo: float, /, *, extrato: str):
     ...
 ```
 
-### Cadastro de cliente
+Ela apresenta as movimentações registradas e o saldo atual. Quando não existem movimentações, uma mensagem informativa é exibida.
 
-O sistema deve armazenar os clientes em uma lista. Cada cliente deve conter:
+## Gerenciamento de clientes
 
-- nome;
-- data de nascimento;
-- CPF;
-- endereço.
+### Normalização e validação do CPF
 
-Regras:
+A função `normalizar_cpf` remove pontos, hífen e espaços. Em seguida, `validar_cpf` verifica:
 
-- o CPF deve ser armazenado somente com números;
-- não é permitido cadastrar dois clientes com o mesmo CPF;
-- o endereço deve seguir o formato `logradouro, número - bairro - cidade/sigla do estado`.
+- se o CPF possui 11 dígitos;
+- se os números não são todos iguais;
+- se os dois dígitos verificadores são válidos.
 
-### Cadastro de conta-corrente
+### Validação da data de nascimento
 
-O sistema deve armazenar as contas em uma lista. Cada conta deve conter:
+A função `validar_data_nascimento` espera uma data no formato `dd-mm-aaaa` e valida os intervalos básicos de dia, mês e ano.
 
-- agência;
-- número da conta;
-- cliente vinculado.
+### Validação do endereço
 
-Regras:
+A função `validar_endereco` espera o formato:
 
-- a agência é fixa e possui o código `0001`;
-- a numeração das contas é sequencial e começa em `1`;
-- uma conta pertence a somente um cliente;
-- um cliente pode possuir mais de uma conta;
-- o cliente deve ser localizado pelo CPF antes da criação da conta.
+```text
+logradouro, número - bairro - cidade/sigla do estado
+```
 
-## Regras das operações bancárias
+A estrutura deve possuir três partes não vazias, separadas por hífen.
 
-- O limite por saque é de R$ 500,00.
-- São permitidos, no máximo, três saques por dia.
-- Depósitos e saques devem possuir valores maiores que zero.
-- Todas as movimentações válidas devem ser registradas no extrato.
+### Cadastro
+
+A função `criar_cliente` solicita e valida os dados antes de adicionar o cliente à lista. Cada registro possui:
+
+```python
+{
+    "nome": "Nome do cliente",
+    "data_nascimento": "dd-mm-aaaa",
+    "cpf": "00000000000",
+    "endereco": "logradouro, número - bairro - cidade/UF",
+}
+```
+
+Um CPF inválido ou já cadastrado impede a criação do cliente.
+
+## Gerenciamento de contas
+
+A função `criar_conta` procura o cliente pelo CPF antes de cadastrar uma nova conta. Não é possível criar uma conta para um cliente inexistente.
+
+Cada conta contém:
+
+```python
+{
+    "agencia": "0001",
+    "numero_conta": "1",
+    "cliente": {...},
+}
+```
+
+Regras implementadas:
+
+- a agência possui o código fixo `0001`;
+- o número da conta é sequencial e começa em `1`;
+- uma conta pertence a um único cliente;
+- um cliente pode possuir mais de uma conta.
+
+A função `listar_contas` apresenta agência, número da conta, titular e CPF das contas cadastradas.
+
+## Menu da aplicação
+
+| Opção | Operação |
+|---|---|
+| `d` | Depositar |
+| `s` | Sacar |
+| `e` | Exibir extrato |
+| `nu` | Cadastrar novo usuário |
+| `nc` | Criar nova conta |
+| `lc` | Listar contas cadastradas |
+| `q` | Encerrar a aplicação |
 
 ## Estrutura do projeto
 
 ```text
 01-sistema-bancario-com-funcoes/
 ├── README.md
-├── src/
-│   ├── banco/
-│   │   ├── __init__.py
-│   │   ├── clientes.py
-│   │   ├── configuracoes.py
-│   │   ├── contas.py
-│   │   ├── interface.py
-│   │   ├── operacoes.py
-│   │   └── sistema.py
-│   └── main.py
-└── tests/
-    └── test_operacoes.py
+└── src/
+    └── main.py
 ```
 
-## Arquitetura
+O arquivo `main.py` concentra o estado da aplicação, as funções de negócio e o laço responsável pelo menu interativo.
 
-O projeto utiliza uma **arquitetura modular em camadas leves**. Cada módulo possui uma responsabilidade específica:
-
-| Módulo | Responsabilidade |
-|---|---|
-| `main.py` | Ponto de entrada da aplicação. |
-| `sistema.py` | Controla o fluxo e mantém o estado da aplicação em memória. |
-| `operacoes.py` | Implementa depósito, saque e extrato. |
-| `clientes.py` | Normaliza CPF, consulta e cadastra clientes. |
-| `contas.py` | Cadastra e lista contas-correntes. |
-| `interface.py` | Centraliza o menu e a leitura de dados do terminal. |
-| `configuracoes.py` | Armazena constantes e regras configuráveis. |
-
-### Padrão de projeto
-
-A classe `SistemaBancario` funciona como uma **Facade (fachada)**: ela oferece um ponto central para coordenar a interface, as operações bancárias e os cadastros. As regras permanecem em funções independentes, conforme solicitado pelo desafio.
-
-O fluxo principal é:
+## Fluxo da aplicação
 
 ```text
-main.py → SistemaBancario → interface e módulos de domínio
+Início
+  └── Exibição do menu
+        ├── Operação bancária
+        ├── Cadastro de cliente
+        ├── Cadastro de conta
+        ├── Listagem de contas
+        └── Encerramento
 ```
 
-Essa separação permite alterar o menu sem modificar as regras bancárias e testar cada função isoladamente.
+As listas `clientes` e `contas`, além do saldo e do extrato, existem apenas enquanto o programa está em execução.
 
-## Execução
+## Como executar
 
 ### Pré-requisito
 
-- Python 3 instalado e disponível no terminal.
+- Python 3.10 ou superior, devido ao uso de anotações de tipo com o operador `|`.
 
 Na raiz deste desafio, execute:
 
@@ -162,18 +181,12 @@ Na raiz deste desafio, execute:
 python src/main.py
 ```
 
-## Testes
+## Tecnologias e conceitos
 
-Na raiz deste desafio, execute:
-
-```bash
-python -m unittest discover -s tests -v
-```
-
-## Decisões técnicas
-
-- Os dados são armazenados em listas durante a execução, conforme definido pelo enunciado.
-- Clientes e contas são representados por dicionários para manter a solução compatível com o nível do desafio.
-- O CPF é normalizado antes da consulta ou persistência em memória.
-- A numeração da conta é calculada de forma sequencial a partir da lista de contas.
-- Nenhuma dependência externa é necessária.
+- Python 3;
+- funções;
+- argumentos *positional-only* e *keyword-only*;
+- listas e dicionários;
+- anotações de tipos;
+- validação de dados;
+- modularização de responsabilidades por funções.
