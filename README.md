@@ -18,10 +18,8 @@ Cada desafio é mantido como um projeto independente, com código-fonte, documen
 .
 ├── 01-sistema-bancario-com-funcoes/
 │   ├── README.md
-│   ├── src/
-│   │   ├── banco/
-│   │   └── main.py
-│   └── tests/
+│   └── src/
+│       └── main.py
 └── README.md
 ```
 
@@ -29,7 +27,7 @@ Cada desafio fica diretamente na raiz do repositório e segue a convenção `NN-
 
 - `README.md`: documentação, requisitos e instruções do desafio;
 - `src/`: código-fonte da solução;
-- outros diretórios, como `tests/`, poderão ser incluídos quando necessários.
+- outros diretórios poderão ser incluídos conforme a necessidade de cada projeto.
 
 ## Como executar um projeto
 
