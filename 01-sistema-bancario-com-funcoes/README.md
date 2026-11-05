@@ -1,5 +1,7 @@
 # Otimizando o Sistema Bancário com Funções Python
 
+05/11/2026
+
 ## Visão geral
 
 Este projeto implementa a segunda versão de um sistema bancário executado pelo terminal. A solução refatora as operações bancárias em funções e acrescenta o gerenciamento de clientes e contas-correntes.
